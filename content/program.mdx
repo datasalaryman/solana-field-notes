@@ -1,0 +1,141 @@
+---
+title: Your First Solana Program
+description: Create your first Anchor program and deploy it on Localnet
+---
+
+This page shows you how to build and deploy a Solana program end-to-end. Our example here will print a simple `"Hello World!" message via the the program logs. 
+
+## Generate and build an Anchor program
+
+To generate our Solana program scaffold, we will use the Anchor CLI we installed earlier. 
+
+```bash
+anchor init --template single hello-world
+```
+
+Step into the directory and build the program:
+
+```bash
+cd hello-world
+anchor build
+```
+
+You will see your Solana program built in the `target/deploy/` directory as an `*.so` file. We will deploy this program to localnet later once we've made our changes. 
+
+## Building our "Hello World" program
+
+Navigate to `programs/hello-world/src/lib.rs`. **Except** for the `declare_id!()` line, delete the code and replace it with the following:
+
+```rust
+use anchor_lang::{
+    prelude::*,
+    solana_program::{instruction::Instruction, program::invoke},
+};
+
+declare_id!("<PROGRAM_ID>");
+
+const MEMO_PROGRAM_ID: Pubkey = pubkey!("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
+
+#[program]
+pub mod hello_world_program {
+    use super::*;
+
+    pub fn say_hello(ctx: Context<SayHello>) -> Result<()> {
+        invoke(
+            &Instruction::new_with_bytes(MEMO_PROGRAM_ID, b"Hello World!", vec![]),
+            &[ctx.accounts.memo_program.to_account_info()],
+        )?;
+
+        Ok(())
+    }
+}
+
+#[derive(Accounts)]
+pub struct SayHello<'info> {
+    /// CHECK: The address constraint pins this executable account to the Memo program.
+    #[account(address = MEMO_PROGRAM_ID, executable)]
+    pub memo_program: UncheckedAccount<'info>,
+}
+
+```
+
+You don't need to know what the code means for now. But there are four important sections in the code that you will see in every Anchor program you'll ever build:
+
+1. The **`use`** block - Defines our Rust dependencies
+2. The **`declare_id!()`** block - Defines the program's address onchain
+3. The **`#[program]`** block - Defines the programs entrypoint and instruction handers
+4. The **`#[derive(Accounts)]`** block - Defines the accounts passed into instructions; each instruction needs its own `#[derive(Accounts)]` block. 
+
+We aren't done yet. We will revise the `programs/hello-world/tests/test_initialize.rs` file to the following:
+
+```rust
+use {
+    anchor_lang::{
+        solana_program::{instruction::Instruction},
+        InstructionData, ToAccountMetas,
+    },
+    litesvm::LiteSVM,
+    solana_keypair::Keypair,
+    solana_message::{Message, VersionedMessage},
+    solana_signer::Signer,
+    solana_transaction::versioned::VersionedTransaction,
+};
+
+#[test]
+fn test_initialize() {
+    let program_id = hello_world::id();
+    let payer = Keypair::new();
+    let mut svm = LiteSVM::new();
+    let bytes = include_bytes!(concat!(
+        env!("CARGO_TARGET_TMPDIR"),
+        "/../deploy/hello_world.so"
+    ));
+    svm.add_program(program_id, bytes).unwrap();
+    svm.airdrop(&payer.pubkey(), 1_000_000_000).unwrap();
+
+    let instruction = Instruction::new_with_bytes(
+        program_id,
+        &hello_world::instruction::SayHello {}.data(),
+        hello_world::accounts::SayHello {
+            memo_program: hello_world::MEMO_PROGRAM_ID
+        }.to_account_metas(None),
+    );
+
+    let blockhash = svm.latest_blockhash();
+    let msg = Message::new_with_blockhash(&[instruction], Some(&payer.pubkey()), &blockhash);
+    let tx = VersionedTransaction::try_new(VersionedMessage::Legacy(msg), &[&payer]).unwrap();
+
+    let res = svm.send_transaction(tx);
+    assert!(res.is_ok());
+
+}
+```
+
+This creates a test on our `SayHello` instruction. The important parts to know now are the following:
+
+1. The `#[test]` decorator - tells the compiler that the function right below it is meant to be run as a test
+2. `let mut svm = LiteSVM::new()` - we are using LiteSVM as our test harness
+3. `svm.add_program(program_id, bytes).unwrap()` - we deploy the program to our test harness
+4. `Instruction::new_with_bytes(...)` - we define an instruction run based on the `SayHello` accounts and instruction we defined in the `lib.rs` file
+5. `svm.send_transaction(tx)` - we send the transaction to the testing harness
+6. `assert!(res.is_ok())` - we test that the transaction was successful and did not result in an error
+
+Running `anchor build` should successfully build the new Solana program and running `anchor test` should successfully have run the test we have created. 
+
+## Deploying a program to the localnet cluster
+
+To simulate real Solana environments, a minimal version of a blockchain network could be run on your local machine. On a separate terminal, we run **Localnet**, by running a Surfpool instance with the following command:
+
+
+```bash
+surfpool start
+```
+
+To deploy your program onchain, run the following:
+
+
+```bash 
+solana program deploy target/deploy/hello_world.so --url http://127.0.0.1:8899 --program-id target/deploy/hello_world-keypair.json
+```
+
+At the end of the run, you should see your PROGRAM_ID and your a Signature.
