@@ -1,0 +1,44 @@
+---
+title: Installing dependencies on Solana
+description: All the tools you'll need for your journey
+---
+
+## Install Solana developer tools
+
+Solana tooling and programs are mostly built on the Rust programming language today. Install it on your local machine:
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+```
+
+Next, you will install the Solana CLI:
+
+
+```bash
+sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
+```
+
+We will be creating our Solana programs on the Anchor framework:
+
+```bash
+curl -sSfL https://raw.githubusercontent.com/otter-sec/anchor/master/avm/install | sh
+```
+
+This installs AVM, the Anchor version manager. You will then still have to install the latest version of the Anchor CLI:
+
+
+```bash
+avm install latest
+```
+
+Once done, verify that you've successfully installed it:
+
+```bash
+anchor --version
+```
+
+Lastly, to run the a simulated version of the chain on your local machine, install Surfpool:
+
+```bash
+curl -sL https://run.surfpool.run/ | bash
+```
