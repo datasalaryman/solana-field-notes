@@ -1,0 +1,69 @@
+---
+title: Sending transactions
+description: How to interact with the blockchain
+---
+
+This page will show you how to send transactions to the blockchain using the program we just created. 
+
+Now that we know how to use the explorer, let's try and interact with our program on localnet. Today, the best way to interact with a Solana program is to use Solana Kit. Our goal is to write a script that will allow us to send a transaction using our Hello World Program to show "Hello World!" in the program logs. 
+
+Conveniently, within our `hello-world` project, we have an `/app` directory we can write our script code in. Because most of the time, you will be writing Solana web applications, we will be writing our script in Typescript. 
+
+Let's install our dependencies within our directory. We will use `pnpm` in this project. `npm` and `bun` are fine if you know the equivalent commands for them and you can follow along. 
+
+If you haven't installed pnpm yet, you can install it via the following command:
+
+```bash
+curl -fsSL https://get.pnpm.io/install.sh | sh
+```
+
+Once installed you can add the `@solana/kit` package in our project via the following command from within the root directory. We will also be using the `codama` package to create an SDK that our Typescript script can use. 
+
+```bash
+pnpm add @solana/kit codama @solana/kit-plugin-signer
+pnpm add tsx --save-dev
+```
+
+Once these commands are run, we can initialize and configure codama with the following command:
+
+```bash
+pnpm exec codama init
+```
+
+To point codama to the right directory correctly and to generate the right clients in the right directories, here is how you'll fill up the config properly:
+
+```
+✔ Where is your IDL located? (Supports Codama and Anchor IDLs). … target/idl/hello_world.json
+✔ Which script preset would you like to use? › Generate JavaScript client, Generate Rust client
+✔ [js] Where is the JavaScript client package located? … app/clients/js
+✔ [rust] Where is the Rust client crate located? … app/clients/rust
+```
+
+Then we generate our clients with the following command:
+
+```bash
+pnpm exec codama run --all
+```
+
+We can verify that the codama clients are available in the following directories:
+
+```bash
+ls -al app/clients/js
+ls -al app/clients/rust
+```
+
+To allow us to create a script we have to change the `"type"` attribute in our `package.json` to the following:
+
+```diff
+ {
+     "name": "hello-world", 
+     "version": "1.0.0", 
++    "type": "module"
+     ...
+ }
+```
+
+Once done, we can finally create our Typescript script:
+
+
+
