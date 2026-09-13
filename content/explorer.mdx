@@ -1,0 +1,84 @@
+---
+title: Exploring the Blockchain
+description: Understanding transactions via the Solana Blockchain
+---
+
+Jumping off from the end of our [Solana program deployment](/program), you will see two strings printed out. A Program ID and a transaction signature. It will look something like this:
+
+```
+Program Id: AJwjxaUumLFggQbQXaTogHfzSQgPM959X1JR49CaydNd
+Signature: 39zKioF9HFqRobsGxY1n1frb2pJZDwZZfKPS2mahHm1kjw7hzSrEu1PD7YA1cjQuj5QZshrHnrRkGKryZAEWafZJ
+```
+
+Assuming you still have [Surfpool](/program#deploying-a-program-to-the-localnet-cluster) running in the background, you can go to the [Localnet Explorer](https://explorer.solana.com/?cluster=custom&customUrl=http%3A%2F%2Flocalhost%3A8899) to better understand what these mean.
+
+You can copy the Program ID and Signature strings and put it into the Explorer search box. It'll most likely give you the right transaction as a first suggestion. 
+
+When I look up the Program Id in the explorer, I see the following:
+
+![An image showing the first section of the program account page on the Solana explorer](/assets/explorer-program-1.jpeg)
+
+On the first section of this page, I can see the following information:
+
+1. The address
+2. The amount of SOL paid to store the data (called Rent, more on that later)
+3. The **Executable** flag tagged Yes because it's a program account 
+4. The **Executable Data** field - this contains the account which contains our program data
+5. The Verified Build and Security.txt links (which we haven't configued, more on that later)
+6. The last deployed slot of the program (think of it as the time the program was last updated, again, more on this later)
+7. The upgrade authority which contains the address of the account that can make changes
+
+Of all these items, 1, 4, and 7 are the most important for us now. We will see why in the succeeding sections. 
+
+The next section of the page shows the history. This will contain any transactions that involve your Solana program. This will include transactions using your program, transactions using your program within other programs (called Cross-Program Invocations, more on this later), and program upgrades. 
+
+![An image showing the second section of the program account page on the Solana explorer](/assets/explorer-program-2.jpeg) 
+
+Right now, we only have one transaction that does the program deploy onto Localnet. Let's click into this transaction to see the Transaction page. When we do so, we see the following:
+
+![An image showing the first section of the transaction page on the Solana explorer](/assets/explorer-transaction-1.jpeg)
+
+1. A status flag - in our case, the transaction succeeded
+2. A confirmation status - Finalized means it's recognized by the blockchain as part of the transaction history
+3. A signature - this is the transaction signature we saw earlier, think of it as a transaction ID
+4. A Fee payer - this is who pays for and signs the transaction
+5. A slot - the slot where the program was deployed
+6. A recent blockhash - the blockhash that allows us to sign and send transactions in a timely manner (more on what this means later)
+7. A fee - SOL paid to the validator in order to include this transaction into the blockchain
+8. CUs consumed vs. requested - roughly how much compute was used by the transaction vs how much was requested by it
+9. Transaction version - which transaction schema or format the validator should interpret the transaction sent to it
+10. Transaction size - how long in bytes the transaction message was
+11. Timestamps in local time and UTC - When in wall time the transaction was sent and added to the blockchain
+
+In the next section we see the following:
+
+![An image showing the accounts section of the transaction page on the Solana explorer](/assets/explorer-transaction-2.jpeg)
+
+We see all the accounts used in the transaction and their SOL balance changes, including what their balances were after the transaction. 
+
+Scrolling down, we see another section containing the following:
+
+![An image showing the instructions section of the transaction page on the Solana explorer](/assets/explorer-transaction-3.jpeg)
+
+Here we see all the instructions that were run in this transaction. The first instruction is preparing an account for our Program Id. It needs to transfer the SOL rent into the account, allocating the right amount of bytes it needs, and assign ownership of the account to another program called the BPF Upgradeable Loader (more on who this is later).
+
+In the next part we see another instruction:
+
+![An image showing the next instruction of the transaction page on the Solana explorer](/assets/explorer-transaction-4.jpeg)
+
+Without going into too much detail, this instruction points the program address to the right account containing the data of our Solana program. If you notice, it's the BPF Upgradeable Loader who is the Program for this instruction. Every program deployment operation is done through this program. 
+
+![An image containing an inner instruction of the transaction page on the Solana explorer](/assets/explorer-transaction-5.jpeg)
+
+Inside this instruction is another instruction called an **Inner Instruction**. It contains all instructions called by programs to other programs. In this case, the BPF Upgradable Loader is calling the System Program to create another account. 
+
+In the final section, we have the Program logs and the CU profiling. Logs emitted by Solana programs are added in this section:
+
+![An image containing the logs and CU sections of the transaction page on the Solana explorer](/assets/explorer-transaction-6.jpeg)
+
+The logs contain helpful information about the state of the run or any error states your Solana programs might have. The CU profiling shows you how much compute in CUs each instruction is using and how much it contributes to the total. 
+
+
+
+
+
