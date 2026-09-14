@@ -65,5 +65,55 @@ To allow us to create a script we have to change the `"type"` attribute in our `
 
 Once done, we can finally create our Typescript script:
 
+```typescript
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import {
+  appendTransactionMessageInstructions,
+  assertIsTransactionWithBlockhashLifetime,
+  createClient,
+  createSolanaRpc,
+  createSolanaRpcSubscriptions,
+  createTransactionMessage,
+  getSignatureFromTransaction,
+  pipe,
+  sendAndConfirmTransactionFactory,
+  setTransactionMessageFeePayerSigner,
+  setTransactionMessageLifetimeUsingBlockhash,
+  signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { signerFromFile } from '@solana/kit-plugin-signer';
+import { getSayHelloInstruction } from './clients/js/src/generated';
 
+const client = await createClient().use(signerFromFile(join(homedir(), '.config/solana/id.json')));
 
+const rpc = createSolanaRpc('http://127.0.0.1:8899');
+const { value: latestBlockhash } = await rpc.getLatestBlockhash({ commitment: 'confirmed' }).send();
+const transaction = await signTransactionMessageWithSigners(
+  pipe(
+    createTransactionMessage({ version: 1 }),
+    (message) => setTransactionMessageFeePayerSigner(client.payer, message),
+    (message) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, message),
+    (message) => appendTransactionMessageInstructions([getSayHelloInstruction({})], message),
+  ),
+);
+
+assertIsTransactionWithBlockhashLifetime(transaction);
+
+await sendAndConfirmTransactionFactory({
+  rpc,
+  rpcSubscriptions: createSolanaRpcSubscriptions('ws://127.0.0.1:8900'),
+})(transaction, { commitment: 'confirmed' });
+
+console.log('Transaction:', getSignatureFromTransaction(transaction));
+```
+
+We will then get a printout of the transaction signature like so:
+
+```
+Transaction: 3MmQYRcVtQWyDMXNMWGMA2nYoou5CiNbZLo3adKg3JfVbK2te2R5yhKCqfdMEqQizDbvTJfsZNopsWV9ScZmexRR
+```
+
+You can then check the transaction in the [explorer](/explorer) and see that it works:
+
+![An image showing the transaction sent by the user invoking their Hello World](/assets/explorer-transaction-hello-world.jpeg)
