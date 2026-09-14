@@ -1,0 +1,88 @@
+---
+title: Your first full stack Solana app
+description: Create a full stack web app that talks to our Solana program
+---
+
+This page will show you how to create a full stack web app that will successfully connect to the [Solana program](/program) we just built. 
+
+Now that you know how to interact with your Solana program onchain using the Typescript SDK and a simple Typescript script, we can move on to building a full-stack web application. 
+
+## Installing web app dependencies
+
+In the root directory, install the following packages:
+
+```bash
+pnpm add react react-dom @wallet-ui/react
+pnpm add -D vite @vitejs/plugin-react @types/react @types/react-dom tailwindcss @tailwindcss/vite
+```
+
+Add two files, a `tsconfig.json` file in your root directory:
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+
+    "strict": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+
+    "types": ["vite/client", "node"]
+  },
+  "include": [
+    "app/src",
+    "app/clients/js",
+    "app/script.ts",
+    "vite.config.ts"
+  ],
+  "exclude": ["node_modules", "dist", "target"]
+}
+```
+
+and a `vite.config.ts` in your root directory:
+
+```typescript
+// vite.config.ts
+import { fileURLToPath, URL } from 'node:url';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  root: fileURLToPath(new URL('./app', import.meta.url)),
+  envDir: fileURLToPath(new URL('.', import.meta.url)),
+
+  plugins: [react(), tailwindcss()],
+
+  build: {
+    outDir: fileURLToPath(new URL('./dist', import.meta.url)),
+    emptyOutDir: true,
+  },
+});
+```
+
+also add the following to your `package.json`:
+
+```jsonc
+{
+    // ...
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc --noEmit && vite build",
+        "preview": "vite preview",
+        "typecheck": "tsc --noEmit"
+        // ...
+    }, 
+    // ...
+}
+```
+
+*To be completed ...*
